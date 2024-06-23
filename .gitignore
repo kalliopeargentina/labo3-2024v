@@ -189,3 +189,4 @@ src/GradientBoosting2/data/productos_a_predecir.txt
 src/GradientBoosting2/data/sell-in.txt
 src/GradientBoosting2/data/tb_productos_descripcion.txt
 src/GradientBoosting2/data/tb_productos.txt
+src/GradientBoosting2/Bagging/FE_dataset-CARLA.parquet
