@@ -183,3 +183,9 @@ project/target
 
 .vscode/settings.json
 src/GradientBoosting2/Bagging/FE_dataset2018.parquet
+src/GradientBoosting2/data/predicciones.txt
+src/GradientBoosting2/data/tb_stocks.txt
+src/GradientBoosting2/data/productos_a_predecir.txt
+src/GradientBoosting2/data/sell-in.txt
+src/GradientBoosting2/data/tb_productos_descripcion.txt
+src/GradientBoosting2/data/tb_productos.txt
