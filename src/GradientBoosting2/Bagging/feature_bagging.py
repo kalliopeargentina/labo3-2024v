@@ -153,25 +153,7 @@ class FeatureBaggingWithHyperparamTuning:
             forecasts.append(np.mean(pred, axis=0))  # Assuming single step forecast
             print(f"Forecast for {current_date}: {np.mean(pred, axis=0)}")
             # Update current_X for the next step forecast
-            current_date += pd.DateOffset(months=1)
-            current_X = self.update_features(current_X, np.mean(pred, axis=0), current_date)           
+            current_date += pd.DateOffset(months=1)         
         return np.array(forecasts)
     
-    def update_features(self, current_X, new_value, new_date):
-        updated_X = current_X.copy()
-        # Create a new row with the new predicted value
-        new_row = updated_X.iloc[-1].copy()
-        new_row['tn_lag_1'] = new_value  # Set the new prediction as the new lagged value
-        # Shift existing lagged values
-        for lag in range(2, 13):  # Assuming 12 lags
-            if f'tn_lag_{lag}' in updated_X.columns:
-                new_row[f'tn_lag_{lag}'] = updated_X.iloc[-2][f'tn_lag_{lag-1}']
-            if f'tn_lag_{lag}' in updated_X.columns:
-                new_row[f'cust_request_tn_lag_{lag}'] = updated_X.iloc[-2][f'cust_request_tn_lag_{lag-1}']
-            if f'tn_lag_{lag}' in updated_X.columns:
-                new_row[f'stock_final_lag_{lag}'] = updated_X.iloc[-2][f'stock_final_lag_{lag-1}']
-        # Append the new row to the DataFrame using pd.concat
-        new_row_df = pd.DataFrame([new_row], index=[new_date.to_period('M')])
-        updated_X = pd.concat([updated_X, new_row_df])
-        updated_X.fillna(0, inplace=True)
-        return updated_X
+   

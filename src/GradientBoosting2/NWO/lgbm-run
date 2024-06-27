@@ -1,0 +1,82 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import labolibrary as labo
+
+from sklearn.preprocessing import MinMaxScaler
+#DATOS_DIR = '~/buckets/b1/datasets/'
+DATOS_DIR = 'src/GradientBoosting2/data/'
+
+# Definir la métrica personalizada
+def multinacional_metric(y_true, y_pred):
+    return abs(sum(y_true - y_pred)) / sum(y_true)
+# Función para escalar y devolver una serie
+def minmax_scale_group(group):
+    scaler = MinMaxScaler()
+    scaled_values = scaler.fit_transform(group.values.reshape(-1, 1)).flatten()
+    scalers[group.name] = scaler  # Almacenar el escalador para este grupo
+    return pd.Series(scaled_values, index=group.index)
+
+# Función para desescalar y devolver una serie
+def inverse_minmax_scale_group(group):
+    scaler = scalers[group.name]
+    inversed_values = scaler.inverse_transform(group.values.reshape(-1, 1)).flatten()
+    return pd.Series(inversed_values, index=group.index)
+
+
+df_final = pd.read_parquet(DATOS_DIR+'FE_dataset-CARLA.parquet') 
+df_final.columns = df_final.columns.str.replace(' ', '_').str.replace(r'[^A-Za-z0-9_]', '', regex=True)
+
+### Filtrar datos
+
+df_final = df_final.loc['2018-01-01':'2020-12-01']
+
+### Agrupar y escalar
+
+scalers = {}
+
+df_final['tn'] = df_final.groupby('product_id')['tn'].transform(minmax_scale_group) #escalado
+df_final['tn_2'] = df_final.groupby('product_id')['tn_2'].transform(minmax_scale_group) #escalado
+
+
+# Correr Modelo
+
+# Correr Modelo
+params={
+        'boosting_type': 'gbdt',
+        'objective': 'tweedie',
+        'tweedie_variance_power': 1.1,
+        'metric':'multinacional_metric',
+        'n_jobs': -1,
+        'seed': 113,
+        'learning_rate': 0.2,
+        'bagging_fraction': 0.85,
+        'bagging_freq': 1, 
+        'colsample_bytree': 0.85,
+        'colsample_bynode': 0.85,
+        #'min_data_per_leaf': 25,
+        #'num_leaves': 200,
+        'lambda_l1': 0.5,
+        'lambda_l2': 0.5
+}
+model, average_metric = labo.train_lightgbm_model(df_final)
+print("Overall custom metric: ", average_metric)
+
+
+
+
+# Predict values for the entire dataset using the trained models
+# Prepare last data points for prediction
+last_data_points = df_final[df_final.index == df_final.index.max()].copy()
+last_data_points.drop(columns=['tn_2'], inplace=True)
+
+# Predict the next month's value using the trained model
+predictions = labo.predict_next_month(model, last_data_points)
+
+preds = predictions.groupby('product_id')['tn_2'].transform(inverse_minmax_scale_group)
+predictions['tn'] = preds
+predictions.drop(columns=['tn_2'], inplace=True)
+predictions = predictions.reset_index()
+predictions =  predictions.groupby('product_id')['tn'].sum()
+predictions.columns = ['product_id', 'tn']
+predictions.to_csv(DATOS_DIR+'/pred/predicciones-v1.csv', index=True,header=True)
