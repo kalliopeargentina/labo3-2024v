@@ -2,18 +2,48 @@ import pandas as pd
 import numpy as np
 import lightgbm as lgb
 from sklearn.model_selection import TimeSeriesSplit
+from sklearn.metrics import mean_squared_error
+import math
+
+#DATOS_DIR = '~/buckets/b1/datasets/'
+DATOS_DIR = '../data/'
+
+# Function to center, scale, and return a series
+def minmax_scale_group(group):
+    median = group.median()
+    centered_values = group - median
+    scaler = MinMaxScaler()
+    scaled_values = scaler.fit_transform(centered_values.values.reshape(-1, 1)).flatten()
+    scalers[group.name] = scaler  # Store the scaler for this group
+    medians[group.name] = median  # Store the median for this group
+    return pd.Series(scaled_values, index=group.index, name=group.name)
+
+# Function to inverse transform (de-scale) and decenter, and return a series
+def inverse_minmax_scale_group(group):
+    group_name = group.name
+    scaler = scalers[group_name]
+    median = medians[group_name]
+    inversed_centered_values = scaler.inverse_transform(group.values.reshape(-1, 1)).flatten()
+    original_values = inversed_centered_values + median
+    return pd.Series(original_values, index=group.index, name=group_name)
+
+# Custom metric function
+def multinacional_metric(y_true_scaled, y_pred_scaled):
+    # Inverse transform and decenter the predicted values
+    y_pred_original = y_pred_scaled.groupby(y_pred_scaled.index).apply(inverse_minmax_scale_group, group_keys=False)
+    y_true_original = y_true_scaled.groupby(y_true_scaled.index).apply(inverse_minmax_scale_group, group_keys=False)
+    # Calculate the metric using true values (already in the original scale)
+    metric = abs(sum(y_true_original - y_pred_original)) / sum(y_true_original)
+    
+    return metric
 
 
-# Define the custom metric function
-def multinacional_metric(y_pred, dataset):
-    y_true = dataset.get_label()
-    metric_value = abs(sum(y_true - y_pred)) / sum(y_true)
-    return 'multinacional_metric', metric_value, False
+
 
 def train_lightgbm_model(data, lgboost_params={},col='tn_2',metric='multinacional_metric'):
     X = data.drop(columns=[col])
     y = data[col]
-    tscv = TimeSeriesSplit(n_splits=5)
+    tscv = TimeSeriesSplit(5)
     best_model = None
     best_score = np.inf
 
@@ -35,6 +65,7 @@ def train_lightgbm_model(data, lgboost_params={},col='tn_2',metric='multinaciona
                 valid_sets=[test_data], 
                 valid_names=['validation'], 
                 feval=multinacional_metric,
+                
                 callbacks=[lgb.early_stopping(stopping_rounds=10), lgb.log_evaluation(0)]
             )
         else:
@@ -48,8 +79,9 @@ def train_lightgbm_model(data, lgboost_params={},col='tn_2',metric='multinaciona
             )
         
         y_pred = model.predict(X_test, num_iteration=model.best_iteration)
-        score = abs(sum(y_test - y_pred)) / sum(y_test)
-
+        #score = abs(sum(y_test - y_pred)) / sum(y_test)
+        #score = sum(y_test**2 - y_pred**2) / sum(y_test)
+        score = mean_squared_error(y_test, y_pred)
         if score < best_score:
             best_score = score
             best_model = model
