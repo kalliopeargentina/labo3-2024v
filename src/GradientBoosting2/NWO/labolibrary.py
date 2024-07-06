@@ -3,7 +3,7 @@ import numpy as np
 import lightgbm as lgb
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.metrics import mean_squared_error
-from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import RobustScaler,PowerTransformer
 import math
 
 #DATOS_DIR = '~/buckets/b1/datasets/'
@@ -11,7 +11,8 @@ DATOS_DIR = '../data/'
 
 # Function to center, scale, and return a series
 def scale_group(group):
-    scaler = RobustScaler()
+    scaler = RobustScaler(),
+    #scaler = PowerTransformer()
     scaled_values = scaler.fit_transform(group.values.reshape(-1, 1)).flatten()
     scalers[group.name] = scaler  # Store the scaler for this group
     return pd.Series(scaled_values, index=group.index, name=group.name)
