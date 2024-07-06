@@ -193,3 +193,5 @@ src/GradientBoosting2/Bagging/FE_dataset-CARLA.parquet
 src/GradientBoosting2/data/FE_dataset-CARLA.parquet
 src/GradientBoosting2/data/FE_dataset2018.parquet
 src/GradientBoosting2/data/FE_02_dataset.parquet
+src/GradientBoosting2/data/FE_dataset-PCA-Decompose.parquet
+src/GradientBoosting2/data/scalers.pkl
