@@ -43,8 +43,8 @@ def train_lightgbm_model(data, lgboost_params={},col='tn_2',metric='multinaciona
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         weights_train = weights.iloc[train_index]
-        #train_data = lgb.Dataset(X_train, label=y_train,weight=weights_train)
-        train_data = lgb.Dataset(X_train, label=y_train)
+        train_data = lgb.Dataset(X_train, label=y_train,weight=weights_train)
+        #train_data = lgb.Dataset(X_train, label=y_train)
         test_data =  lgb.Dataset(X_test, label=y_test, reference=train_data)
         params  = lgboost_params
         
@@ -92,6 +92,20 @@ def predict_next_month(model, last_data_points,col='tn_2'):
 
     return prediction_df
 
+def predict_next_month_customer(model, last_data_points,col='tn_2'):
+    predictions = []
+    last_month = last_data_points.index.max() + 1
+
+    last_data_points.index = [last_month] * len(last_data_points)  # Set index to the next month
+    predictions = model.predict(last_data_points, num_iteration=model.best_iteration)
+    
+    prediction_df = last_data_points[['product_id','customer_id']].copy()
+    prediction_df[col] = predictions
+    prediction_df.index = [last_month] * len(last_data_points)
+
+    return prediction_df
+
+
 def train_lightgbm_model_classic(data, lgboost_params={}, col='tn_2', metric='multinacional_metric', weights=""):
     # Ensure weights is a numpy array
     weights = weights.to_numpy()
@@ -118,8 +132,8 @@ def train_lightgbm_model_classic(data, lgboost_params={}, col='tn_2', metric='mu
     weights_test = weights[len(X_train):]
 
     # Create LightGBM datasets
-    #train_data = lgb.Dataset(X_train, label=y_train, weight=weights_train)
-    train_data = lgb.Dataset(X_train, label=y_train)
+    train_data = lgb.Dataset(X_train, label=y_train, weight=weights_train)
+    #train_data = lgb.Dataset(X_train, label=y_train)
    
     test_data = lgb.Dataset(X_test, label=y_test, weight=weights_test, reference=train_data)
     
