@@ -204,3 +204,4 @@ src/GradientBoosting2/data/FE_09_dataset.parquet
 src/GradientBoosting2/data/FE_10_dataset.parquet
 src/GradientBoosting2/data/pred/[Libro1]Hoja3
 src/GradientBoosting2/data/pred/[Libro1]Hoja3
+src/GradientBoosting2/data/FE_dataset-PCA-Decompose-Cluster-DTW.parquet

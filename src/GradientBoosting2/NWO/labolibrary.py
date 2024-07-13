@@ -9,21 +9,6 @@ import math
 #DATOS_DIR = '~/buckets/b1/datasets/'
 DATOS_DIR = '../data/'
 
-# Function to center, scale, and return a series
-def scale_group(group):
-    scaler = RobustScaler(),
-    #scaler = PowerTransformer()
-    scaled_values = scaler.fit_transform(group.values.reshape(-1, 1)).flatten()
-    scalers[group.name] = scaler  # Store the scaler for this group
-    return pd.Series(scaled_values, index=group.index, name=group.name)
-
-# Function to inverse transform (de-scale) and decenter, and return a series
-def inverse_scale_group(group):
-    group_name = group.name
-    scaler = scalers[group_name]
-    inversed_centered_values = scaler.inverse_transform(group.values.reshape(-1, 1)).flatten()
-    original_values = inversed_centered_values
-    return pd.Series(original_values, index=group.index, name=group_name)
 
 # Custom metric function
 def multinacional_metric(y_pred,y_true):
@@ -161,6 +146,10 @@ def train_lightgbm_model_classic(data, lgboost_params={}, col='tn_2', metric='mu
         )
     
     y_pred = model.predict(X_test, num_iteration=model.best_iteration)
+    #if sum(y_test) == 0:
+    #    score = 1e6
+    #else:
+    #    score = abs(sum(y_test - y_pred)) / sum(y_test)
     score = mean_squared_error(y_test, y_pred)
     if score < best_score:
         best_score = score
